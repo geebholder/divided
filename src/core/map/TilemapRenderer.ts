@@ -1,9 +1,8 @@
-import { Assets, Texture, Sprite, Container, Rectangle } from "pixi.js";
+import { Texture, Sprite, Container, Rectangle } from "pixi.js";
 import { loadTiledMap } from "./TiledMapLoader";
 import type { TiledTileset, TiledMap } from "./TiledMapLoader";
 
 function getTilesetForGid(tilesets: TiledTileset[], gid: number) {
-  // find the tileset with the highest firstgid <= gid
   let selected = null;
   for (const ts of tilesets) {
     if (gid >= ts.firstgid) selected = ts;
@@ -13,17 +12,21 @@ function getTilesetForGid(tilesets: TiledTileset[], gid: number) {
 }
 
 export async function loadTiledMapAndSprites(
-  mapPath: string
+  mapPath: string,
+  layerName?: string
 ): Promise<{ map: TiledMap; container: Container }> {
-  // load map and tileset textures
   const { map, tilesetTextures } = await loadTiledMap(mapPath);
-
   const mapContainer = new Container();
 
   for (const layer of map.layers) {
-    if (layer.type !== "tilelayer" || !layer.visible) continue;
+    if (
+      layer.type !== "tilelayer" ||
+      !layer.visible ||
+      (layerName && !layer.name.startsWith(layerName))
+    ) {
+      continue;
+    }
 
-    // handle infinite maps (chunks) or regular data
     const chunks = layer.chunks || [
       {
         data: layer.data,
@@ -33,12 +36,13 @@ export async function loadTiledMapAndSprites(
         height: layer.height,
       },
     ];
+
     for (const chunk of chunks) {
       for (let i = 0; i < chunk.data.length; i++) {
         const FLIP_MASK = 0x1fffffff;
         let rawGid = chunk.data[i];
         let gid = rawGid & FLIP_MASK;
-        if (gid === 0) continue; // empty tile
+        if (gid === 0) continue;
 
         const tileset = getTilesetForGid(map.tilesets, gid);
         if (!tileset) continue;

@@ -8,9 +8,6 @@ export class CameraController {
   constructor(worldContainer: Container) {
     this.camera = new Camera();
     this.worldContainer = worldContainer;
-
-    // add camera as parent of world container
-    this.camera.addChild(this.worldContainer);
   }
 
   public setTarget(target: Container) {

@@ -10,48 +10,65 @@ import { Container } from "pixi.js";
 export async function composeScene(renderer: Renderer) {
   const inputManager = new InputManager();
 
-  // create world container for all game objects
-  const worldContainer = new Container();
-
-  // create camera controller
-  const cameraController = new CameraController(worldContainer);
-
-  const debugOverlay = new DebugOverlay(renderer.app);
-  debugOverlay.attachTo(renderer.getDebugLayer());
-
-  const player = new Player();
-  player.x = 400; // set initial position
-  player.y = 300;
-  worldContainer.addChild(player);
-
-  // set camera to follow player
-  cameraController.setTarget(player);
-  cameraController.setFollowSpeed(0.08);
-  cameraController.setDeadzone(20, 20);
-
+  // background visuals (checkerboard, parallax, etc)
   const checkerboard = new Checkerboard(
     renderer.app.screen.width,
     renderer.app.screen.height
   );
-  worldContainer.addChild(checkerboard);
+  renderer.getBackgroundLayer().addChild(checkerboard);
 
-  const { container: mapContainer } = await loadTiledMapAndSprites(
-    "assets/maps/testmap.tmj"
+  const { container: mapContainerBelow } = await loadTiledMapAndSprites(
+    "assets/maps/testmap.tmj",
+    "below"
   );
-  worldContainer.addChild(mapContainer);
 
-  // add camera (with world as child) to main layer
-  renderer.getMainLayer().addChild(cameraController.getCamera());
+  const { container: mapContainerAbove } = await loadTiledMapAndSprites(
+    "assets/maps/testmap.tmj",
+    "above"
+  );
 
-  // add update loop to renderer
+  // create main world container for player + any shared entities
+  const worldMainContainer = new Container();
+
+  // player setup
+  const player = new Player();
+  player.x = 400;
+  player.y = 300;
+  worldMainContainer.addChild(player);
+
+  // add mapContainerBelow to MapLayerBelow
+  renderer.getMapLayerBelow().addChild(mapContainerBelow);
+
+  // add player to MainLayer
+  renderer.getMainLayer().addChild(worldMainContainer);
+
+  // add mapContainerAbove to MapLayerAbove
+  renderer.getMapLayerAbove().addChild(mapContainerAbove);
+
+  // create a single camera controlling offsets
+  const cameraController = new CameraController(worldMainContainer);
+  cameraController.setTarget(player);
+  cameraController.setFollowSpeed(0.1);
+  cameraController.setDeadzone(20, 20);
+
+  // debug overlay
+  const debugOverlay = new DebugOverlay(renderer.app);
+  debugOverlay.attachTo(renderer.getDebugLayer());
+
+  // update loop
   renderer.setUpdateCallback((deltaMs: number) => {
     const input = inputManager.getMovementInput();
     player.update(deltaMs, input);
 
-    // update camera
     cameraController.update(
       renderer.app.screen.width,
       renderer.app.screen.height
     );
+
+    // invert camera position on world containers
+    const cam = cameraController.getCamera();
+    mapContainerBelow.position.set(cam.x, cam.y);
+    worldMainContainer.position.set(cam.x, cam.y);
+    mapContainerAbove.position.set(cam.x, cam.y);
   });
 }

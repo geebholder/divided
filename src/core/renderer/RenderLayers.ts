@@ -1,29 +1,43 @@
 import { Container } from "pixi.js";
 
-export class DebugLayer extends Container {
+export class BackgroundLayer extends Container {
   constructor() {
     super();
-    // add debug-specific setup here
+    this.zIndex = 0; // bg and parallax
   }
 }
 
-export class UILayer extends Container {
+export class MapLayerBelow extends Container {
   constructor() {
     super();
-    // add UI-specific setup here
+    this.zIndex = 1; // behind the player
   }
 }
 
 export class MainLayer extends Container {
   constructor() {
     super();
-    // add layer-specific setup here
+    this.zIndex = 2; // player + vfx and such
   }
 }
 
-export class BackgroundLayer extends Container {
+export class MapLayerAbove extends Container {
   constructor() {
     super();
-    // add background-specific setup here
+    this.zIndex = 3; //front of the player
+  }
+}
+
+export class UILayer extends Container {
+  constructor() {
+    super();
+    this.zIndex = 4; // ui
+  }
+}
+
+export class DebugLayer extends Container {
+  constructor() {
+    super();
+    this.zIndex = 5; // debug ui
   }
 }
